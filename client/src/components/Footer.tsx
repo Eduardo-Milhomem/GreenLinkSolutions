@@ -39,27 +39,27 @@ export default function Footer() {
             <h3 className="font-semibold mb-4">Produtos</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/starlink" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-starlink">
+                <Link href="/collection/starlink-mini" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-starlink">
                   Kits Starlink
                 </Link>
               </li>
               <li>
-                <Link href="/veicular" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-veicular">
+                <Link href="/collection/veicular" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-veicular">
                   Suporte Veicular
                 </Link>
               </li>
               <li>
-                <Link href="/fontes" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-fontes">
+                <Link href="/collection/fontes" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-fontes">
                   Fontes Veiculares
                 </Link>
               </li>
               <li>
-                <Link href="/roteadores" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-roteadores">
+                <Link href="/collection/roteadores" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-roteadores">
                   Roteadores
                 </Link>
               </li>
               <li>
-                <Link href="/acessorios" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-acessorios">
+                <Link href="/collection/acessorios" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-acessorios">
                   Acessórios
                 </Link>
               </li>

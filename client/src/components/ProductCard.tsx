@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Heart, ShoppingCart, Eye } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface ProductCardProps {
   id: string;
@@ -26,6 +29,46 @@ export default function ProductCard({
   soldOut = false,
 }: ProductCardProps) {
   const [currentImage, setCurrentImage] = useState(image);
+  const { toast } = useToast();
+
+  const addToCartMutation = useMutation({
+    mutationFn: async () => {
+      // Get or create cart
+      let cartId = localStorage.getItem("cartId");
+      
+      if (!cartId) {
+        const newCart = await apiRequest("/api/cart", "POST", {
+          sessionId: `session-${Date.now()}`,
+        });
+        cartId = newCart.id;
+        localStorage.setItem("cartId", cartId);
+      }
+
+      // Add item to cart
+      await apiRequest(`/api/cart/${cartId}/items`, "POST", {
+        productId: id,
+        quantity: 1,
+        price: price.toString(),
+      });
+
+      return cartId;
+    },
+    onSuccess: (cartId) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/cart/${cartId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/cart/${cartId}/totals`] });
+      toast({
+        title: "Produto adicionado",
+        description: "O produto foi adicionado ao carrinho com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o produto ao carrinho.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const discountPercent = originalPrice
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
@@ -104,12 +147,12 @@ export default function ProductCard({
 
         <Button
           className="w-full"
-          disabled={soldOut}
-          onClick={() => console.log('Add to cart clicked:', id)}
+          disabled={soldOut || addToCartMutation.isPending}
+          onClick={() => addToCartMutation.mutate()}
           data-testid={`button-add-cart-${id}`}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
-          {soldOut ? 'Esgotado' : 'Adicionar'}
+          {soldOut ? 'Esgotado' : addToCartMutation.isPending ? 'Adicionando...' : 'Adicionar'}
         </Button>
       </div>
     </Card>

@@ -22,19 +22,19 @@ export default function Header() {
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-8">
-            <Link href="/starlink" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-starlink">
+            <Link href="/collection/starlink-mini" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-starlink">
               Starlink
             </Link>
-            <Link href="/veicular" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-veicular">
+            <Link href="/collection/veicular" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-veicular">
               Suporte Veicular
             </Link>
-            <Link href="/fontes" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-fontes">
+            <Link href="/collection/fontes" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-fontes">
               Fontes Veiculares
             </Link>
-            <Link href="/roteadores" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-roteadores">
+            <Link href="/collection/roteadores" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-roteadores">
               Roteadores
             </Link>
-            <Link href="/acessorios" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-acessorios">
+            <Link href="/collection/acessorios" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-acessorios">
               Acessórios
             </Link>
           </nav>
@@ -95,19 +95,19 @@ export default function Header() {
 
         {mobileMenuOpen && (
           <nav className="lg:hidden py-4 space-y-2 border-t animate-in slide-in-from-top-5" data-testid="nav-mobile">
-            <Link href="/starlink" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-starlink">
+            <Link href="/collection/starlink-mini" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-starlink">
               Starlink
             </Link>
-            <Link href="/veicular" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-veicular">
+            <Link href="/collection/veicular" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-veicular">
               Suporte Veicular
             </Link>
-            <Link href="/fontes" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-fontes">
+            <Link href="/collection/fontes" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-fontes">
               Fontes Veiculares
             </Link>
-            <Link href="/roteadores" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-roteadores">
+            <Link href="/collection/roteadores" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-roteadores">
               Roteadores
             </Link>
-            <Link href="/acessorios" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-acessorios">
+            <Link href="/collection/acessorios" className="block px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-acessorios">
               Acessórios
             </Link>
           </nav>
