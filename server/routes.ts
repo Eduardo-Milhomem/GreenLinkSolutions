@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { upload, processImages, serveUploads, deleteImages } from "./middleware/upload";
 import { 
   insertProductSchema, insertCategorySchema, insertUserSchema, insertAddressSchema,
   insertCartItemSchema, insertOrderSchema, insertOrderItemSchema, insertPaymentSchema,
@@ -66,6 +67,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ UPLOAD ============
+  // Rota para servir imagens estáticas
+  app.get("/uploads/products/:filename", serveUploads);
+
+  // Rota para upload de imagens de produtos
+  app.post("/api/upload/product-images", upload.array('images', 10), processImages, (req: Request, res: Response) => {
+    try {
+      if (!req.body.imageUrls || req.body.imageUrls.length === 0) {
+        return res.status(400).json({ error: "Nenhuma imagem foi processada" });
+      }
+
+      res.json({
+        message: "Imagens enviadas com sucesso",
+        images: req.body.imageUrls,
+        thumbnails: req.body.thumbnailUrls
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Erro ao fazer upload das imagens" });
+    }
+  });
+
   // ============ PRODUCTS ============
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
@@ -89,9 +111,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products", async (req: Request, res: Response) => {
+  app.post("/api/products", upload.array('images', 10), processImages, async (req: Request, res: Response) => {
     try {
       const data = insertProductSchema.parse(req.body);
+      
+      // Adicionar URLs das imagens se foram enviadas
+      if (req.body.imageUrls && req.body.imageUrls.length > 0) {
+        data.images = req.body.imageUrls;
+      }
+      
       const product = await storage.createProduct(data);
       
       // Create inventory for the product
@@ -103,31 +131,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(product);
     } catch (error) {
+      console.error('Erro ao criar produto:', error);
       res.status(400).json({ error: "Invalid product data" });
     }
   });
 
-  app.put("/api/products/:id", async (req: Request, res: Response) => {
+  app.put("/api/products/:id", upload.array('images', 10), processImages, async (req: Request, res: Response) => {
     try {
+      // Buscar produto atual para obter imagens antigas
+      const currentProduct = await storage.getProduct(req.params.id);
+      if (!currentProduct) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
       const data = insertProductSchema.partial().parse(req.body);
+      
+      // Se novas imagens foram enviadas, adicionar ao data
+      if (req.body.imageUrls && req.body.imageUrls.length > 0) {
+        // Deletar imagens antigas se existirem
+        if (currentProduct.images && currentProduct.images.length > 0) {
+          deleteImages(currentProduct.images);
+        }
+        data.images = req.body.imageUrls;
+      }
+      
       const product = await storage.updateProduct(req.params.id, data);
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
       res.json(product);
     } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
       res.status(400).json({ error: "Invalid product data" });
     }
   });
 
   app.delete("/api/products/:id", async (req: Request, res: Response) => {
     try {
+      // Buscar produto para obter imagens antes de deletar
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      // Deletar imagens associadas se existirem
+      if (product.images && product.images.length > 0) {
+        deleteImages(product.images);
+      }
+
       const success = await storage.deleteProduct(req.params.id);
       if (!success) {
         return res.status(404).json({ error: "Product not found" });
       }
       res.status(204).send();
     } catch (error) {
+      console.error('Erro ao deletar produto:', error);
       res.status(500).json({ error: "Failed to delete product" });
     }
   });
@@ -204,6 +262,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(movement);
     } catch (error) {
       res.status(400).json({ error: "Invalid movement data" });
+    }
+  });
+
+  // ============ AUTHENTICATION ============
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(data.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists with this email" });
+      }
+      
+      // In production, hash the password before storing
+      const user = await storage.createUser(data);
+      const { password, ...sanitizedUser } = user;
+      
+      // Set session
+      (req as any).session.userId = user.id;
+      
+      res.status(201).json({ 
+        message: "User registered successfully", 
+        user: sanitizedUser 
+      });
+    } catch (error) {
+      res.status(400).json({ error: "Invalid registration data" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // In production, compare hashed password
+      if (user.password !== password) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Set session
+      (req as any).session.userId = user.id;
+      
+      const { password: _, ...sanitizedUser } = user;
+      res.json({ 
+        message: "Login successful", 
+        user: sanitizedUser 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req: Request, res: Response) => {
+    try {
+      (req as any).session.destroy((err: any) => {
+        if (err) {
+          return res.status(500).json({ error: "Logout failed" });
+        }
+        res.json({ message: "Logout successful" });
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Logout failed" });
+    }
+  });
+
+  app.get("/api/auth/me", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      const { password, ...sanitizedUser } = user;
+      res.json(sanitizedUser);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get user info" });
     }
   });
 

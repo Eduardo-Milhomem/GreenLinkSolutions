@@ -29,8 +29,9 @@ export async function seedDatabase() {
 
     const createdCategories: any[] = [];
     for (const category of categories) {
-      const created = await apiRequest('/api/categories', 'POST', category);
-      createdCategories.push(created);
+      const response = await apiRequest('POST', '/api/categories', category);
+      const createdCategory = await response.json();
+      createdCategories.push(createdCategory);
     }
 
     // Create products
@@ -118,7 +119,7 @@ export async function seedDatabase() {
     ];
 
     for (const product of products) {
-      await apiRequest('/api/products', 'POST', product);
+      await apiRequest('POST', '/api/products', product);
     }
 
     console.log('Database seeded successfully!');
